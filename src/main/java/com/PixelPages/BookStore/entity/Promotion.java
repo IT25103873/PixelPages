@@ -21,7 +21,7 @@ public class Promotion {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(name = "discount_pct", nullable = false)
+    @Column(name = "discount_pct", nullable = false, columnDefinition = "DECIMAL(5,2)")
     private double discountPct;
 
     @Column(name = "category_id")
