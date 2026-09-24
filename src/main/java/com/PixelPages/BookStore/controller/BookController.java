@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.PixelPages.BookStore.entity.BookFormat;
+
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
@@ -42,5 +46,17 @@ public class BookController {
     public ResponseEntity<Void> deleteBook(@PathVariable Integer id) {
         bookService.deleteBook(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<BookResponseDTO>> filterBooks(
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) BookFormat format,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+
+        return ResponseEntity.ok(bookService.filterBooks(categoryId, format, author, title, minPrice, maxPrice));
     }
 }

@@ -5,10 +5,13 @@ import com.PixelPages.BookStore.dto.BookResponseDTO;
 import com.PixelPages.BookStore.entity.*;
 import com.PixelPages.BookStore.exception.ResourceNotFoundException;
 import com.PixelPages.BookStore.repository.*;
+import com.PixelPages.BookStore.repository.spec.BookSpecification;
 import com.PixelPages.BookStore.service.BookService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,7 +24,7 @@ public class BookServiceImpl implements BookService {
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final SellerRepository sellerRepository;
-    private final InventoryRepository inventoryRepository;   // <-- aluthෙන් add kala
+    private final InventoryRepository inventoryRepository;
 
     @Override
     public BookResponseDTO createBook(BookRequestDTO dto) {
@@ -56,7 +59,7 @@ public class BookServiceImpl implements BookService {
 
         Book savedBook = bookRepository.save(book);
 
-        // Aluthෙන් add kala parts — automatically Inventory record eka hadanawa
+        // Automatically create an Inventory record for the new book
         Inventory inventory = Inventory.builder()
                 .book(savedBook)
                 .stockQuantity(0)
@@ -122,7 +125,25 @@ public class BookServiceImpl implements BookService {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
         bookRepository.delete(book);
-        // Inventory record eka database eke ON DELETE CASCADE eken automatically delete wenawa
+        // Inventory record is automatically removed via ON DELETE CASCADE
+    }
+
+    @Override
+    public List<BookResponseDTO> filterBooks(Integer categoryId, BookFormat format, String author,
+                                             String title, BigDecimal minPrice, BigDecimal maxPrice) {
+
+        Specification<Book> spec = Specification.where(BookSpecification.isActive())
+                .and(BookSpecification.hasCategory(categoryId))
+                .and(BookSpecification.hasFormat(format))
+                .and(BookSpecification.hasAuthor(author))
+                .and(BookSpecification.hasTitle(title))
+                .and(BookSpecification.priceGreaterThanOrEqual(minPrice))
+                .and(BookSpecification.priceLessThanOrEqual(maxPrice));
+
+        return bookRepository.findAll(spec)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     private BookResponseDTO mapToResponse(Book book) {
