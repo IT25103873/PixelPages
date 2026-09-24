@@ -44,6 +44,10 @@ public class Book {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "stock_quantity", nullable = false)
+    @Builder.Default
+    private Integer stockQuantity = 0;
+
     @Column(length = 1000)
     private String description;
 
