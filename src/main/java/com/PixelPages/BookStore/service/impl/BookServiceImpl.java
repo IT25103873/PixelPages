@@ -9,6 +9,7 @@ import com.PixelPages.BookStore.service.BookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ public class BookServiceImpl implements BookService {
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final SellerRepository sellerRepository;
+    private final InventoryRepository inventoryRepository;   // <-- aluthෙන් add kala
 
     @Override
     public BookResponseDTO createBook(BookRequestDTO dto) {
@@ -52,7 +54,18 @@ public class BookServiceImpl implements BookService {
                 .isActive(true)
                 .build();
 
-        return mapToResponse(bookRepository.save(book));
+        Book savedBook = bookRepository.save(book);
+
+        // Aluthෙන් add kala parts — automatically Inventory record eka hadanawa
+        Inventory inventory = Inventory.builder()
+                .book(savedBook)
+                .stockQuantity(0)
+                .reorderLevel(5)
+                .lastUpdated(LocalDateTime.now())
+                .build();
+        inventoryRepository.save(inventory);
+
+        return mapToResponse(savedBook);
     }
 
     @Override
@@ -109,6 +122,7 @@ public class BookServiceImpl implements BookService {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
         bookRepository.delete(book);
+        // Inventory record eka database eke ON DELETE CASCADE eken automatically delete wenawa
     }
 
     private BookResponseDTO mapToResponse(Book book) {
