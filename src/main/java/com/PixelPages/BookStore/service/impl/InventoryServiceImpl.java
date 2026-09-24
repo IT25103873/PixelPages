@@ -46,6 +46,14 @@ public class InventoryServiceImpl implements InventoryService {
         return mapToResponse(inventoryRepository.save(inventory));
     }
 
+    @Override
+    public List<InventoryResponseDTO> getLowStockItems() {
+        return inventoryRepository.findLowStockItems()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private InventoryResponseDTO mapToResponse(Inventory inventory) {
         return InventoryResponseDTO.builder()
                 .id(inventory.getId())
