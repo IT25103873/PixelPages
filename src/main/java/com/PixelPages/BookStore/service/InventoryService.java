@@ -9,4 +9,5 @@ public interface InventoryService {
     InventoryResponseDTO getInventoryByBookId(Integer bookId);
     List<InventoryResponseDTO> getAllInventory();
     InventoryResponseDTO updateInventory(Integer bookId, InventoryRequestDTO dto);
+    List<InventoryResponseDTO> getLowStockItems();
 }
