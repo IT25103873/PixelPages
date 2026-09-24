@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -12,9 +13,13 @@ import java.time.LocalDateTime;
 public class AdminResponseDTO {
     private String adminId;
     private Integer userId;
-    private String fullName;
+    private String firstName;
+    private String lastName;
     private String email;
     private String phone;
-    private boolean isActive;
+    private LocalDate dateOfBirth;
+    private String address;
+    private String gender;
+    private boolean active;
     private LocalDateTime createdAt;
 }

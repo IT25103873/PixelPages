@@ -10,6 +10,7 @@ import com.PixelPages.BookStore.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,10 +24,16 @@ public class AdminServiceImpl implements AdminService {
     @Autowired
     private UsersRepository usersRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     private static final String PREFIX = "ADM";
+    private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private String generateAdminId() {
-        String lastId = adminRepository.findLastAdminId().orElse(null);
+        List<String> ids = adminRepository.findAllAdminIdsSorted();
+        String lastId = ids.isEmpty() ? null : ids.get(0);
         int nextNumber = 1;
         if (lastId != null) {
             String numberPart = lastId.replace(PREFIX, "");
@@ -35,27 +42,52 @@ public class AdminServiceImpl implements AdminService {
         return PREFIX + String.format("%03d", nextNumber);
     }
 
+    private String generateTempPassword() {
+        StringBuilder sb = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            sb.append(TEMP_PASSWORD_CHARS.charAt(RANDOM.nextInt(TEMP_PASSWORD_CHARS.length())));
+        }
+        return sb.toString();
+    }
+
     @Override
     public AdminResponseDTO createAdmin(AdminRequestDTO requestDTO) {
 
-        // 1. Users table එකේ role='ADMIN' record එකක් හදනවා
+        if (requestDTO.getFirstName() == null || requestDTO.getFirstName().isBlank()
+                || requestDTO.getLastName() == null || requestDTO.getLastName().isBlank()) {
+            throw new IllegalArgumentException("First name and last name are required");
+        }
+
+        // Check if email is already in use
+        if (requestDTO.getEmail() != null && usersRepository.findByEmail(requestDTO.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email '" + requestDTO.getEmail() + "' is already in use by another account.");
+        }
+
+        String tempPassword = generateTempPassword();
+
         Users user = new Users();
-        user.setFullName(requestDTO.getFullName());
+        user.setFirstName(requestDTO.getFirstName());
+        user.setLastName(requestDTO.getLastName());
         user.setEmail(requestDTO.getEmail());
-        user.setPasswordHash(requestDTO.getPassword()); // TODO: BCrypt hash කරන්න production වලදී
+        user.setPasswordHash(tempPassword);
         user.setPhone(requestDTO.getPhone());
+        user.setDateOfBirth(requestDTO.getDateOfBirth());
+        user.setAddress(requestDTO.getAddress());
+        user.setGender(requestDTO.getGender());
         user.setRole("ADMIN");
         user.setActive(true);
         user.setCreatedAt(LocalDateTime.now());
 
         Users savedUser = usersRepository.save(user);
 
-        // 2. AdminProfile record එක හදලා, Users record එකට link කරනවා
         AdminProfile adminProfile = new AdminProfile();
-        adminProfile.setAdminId(generateAdminId());
+        String adminId = generateAdminId();
+        adminProfile.setAdminId(adminId);
         adminProfile.setUserId(savedUser.getUserId());
 
         AdminProfile savedProfile = adminRepository.save(adminProfile);
+
+        emailService.sendAdminCredentials(savedUser.getEmail(), adminId, tempPassword);
 
         return mapToResponseDTO(savedProfile, savedUser);
     }
@@ -89,12 +121,22 @@ public class AdminServiceImpl implements AdminService {
         Users user = usersRepository.findById(profile.getUserId())
                 .orElseThrow(() -> new AdminNotFoundException("Linked user not found for admin: " + adminId));
 
-        user.setFullName(requestDTO.getFullName());
+        // Check if the new email is already used by a DIFFERENT user
+        if (requestDTO.getEmail() != null && !requestDTO.getEmail().equalsIgnoreCase(user.getEmail())) {
+            usersRepository.findByEmail(requestDTO.getEmail()).ifPresent(existing -> {
+                if (!existing.getUserId().equals(user.getUserId())) {
+                    throw new IllegalArgumentException("Email '" + requestDTO.getEmail() + "' is already in use by another account.");
+                }
+            });
+        }
+
+        user.setFirstName(requestDTO.getFirstName());
+        user.setLastName(requestDTO.getLastName());
         user.setEmail(requestDTO.getEmail());
         user.setPhone(requestDTO.getPhone());
-        if (requestDTO.getPassword() != null && !requestDTO.getPassword().isBlank()) {
-            user.setPasswordHash(requestDTO.getPassword());
-        }
+        user.setDateOfBirth(requestDTO.getDateOfBirth());
+        user.setAddress(requestDTO.getAddress());
+        user.setGender(requestDTO.getGender());
 
         Users updatedUser = usersRepository.save(user);
         return mapToResponseDTO(profile, updatedUser);
@@ -107,16 +149,20 @@ public class AdminServiceImpl implements AdminService {
 
         Integer userId = profile.getUserId();
         adminRepository.delete(profile);
-        usersRepository.deleteById(userId); // Users record එකත් delete කරනවා (CASCADE එකෙන් AdminProfile auto-delete වුනත්, order එක safe කරන්න explicit කළා)
+        usersRepository.deleteById(userId);
     }
 
     private AdminResponseDTO mapToResponseDTO(AdminProfile profile, Users user) {
         return new AdminResponseDTO(
                 profile.getAdminId(),
                 user.getUserId(),
-                user.getFullName(),
+                user.getFirstName(),
+                user.getLastName(),
                 user.getEmail(),
                 user.getPhone(),
+                user.getDateOfBirth(),
+                user.getAddress(),
+                user.getGender(),
                 user.isActive(),
                 user.getCreatedAt()
         );

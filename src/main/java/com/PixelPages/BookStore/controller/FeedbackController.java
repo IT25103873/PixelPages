@@ -44,6 +44,13 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.getReviewsByBookId(bookId));
     }
 
+    @PutMapping("/{feedbackId}")
+    public ResponseEntity<FeedbackResponseDTO> updateFeedback(
+            @PathVariable String feedbackId,
+            @RequestBody FeedbackRequestDTO requestDTO) {
+        return ResponseEntity.ok(feedbackService.updateFeedback(feedbackId, requestDTO));
+    }
+
     @PatchMapping("/{feedbackId}/status")
     public ResponseEntity<FeedbackResponseDTO> updateFeedbackStatus(@PathVariable String feedbackId, @RequestBody FeedbackStatusUpdateDTO statusDTO) {
         return ResponseEntity.ok(feedbackService.updateFeedbackStatus(feedbackId, statusDTO));

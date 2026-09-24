@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,8 +20,11 @@ public class Users {
     @Column(name = "user_id")
     private Integer userId;
 
-    @Column(name = "full_name", nullable = false, length = 150)
-    private String fullName;
+    @Column(name = "first_name", length = 75)
+    private String firstName;
+
+    @Column(name = "last_name", length = 75)
+    private String lastName;
 
     @Column(nullable = false, unique = true, length = 150)
     private String email;
@@ -31,8 +35,17 @@ public class Users {
     @Column(length = 20)
     private String phone;
 
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(length = 200)
+    private String address;
+
+    @Column(length = 20)
+    private String gender;
+
     @Column(nullable = false, length = 30)
-    private String role;   // CUSTOMER, SELLER, ADMIN, etc.
+    private String role;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

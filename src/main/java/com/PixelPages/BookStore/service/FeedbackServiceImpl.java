@@ -51,7 +51,6 @@ public class FeedbackServiceImpl implements FeedbackService {
         feedback.setSubject(requestDTO.getSubject());
         feedback.setMessage(requestDTO.getMessage());
         feedback.setRating(requestDTO.getRating());
-        // REVIEW ekakata workflow ekak one na, ehema FEEDBACK ekakata OPEN ekenma patan ganna
         feedback.setStatus("REVIEW".equals(requestDTO.getType()) ? "RESOLVED" : "OPEN");
         feedback.setCreatedAt(LocalDateTime.now());
 
@@ -69,12 +68,40 @@ public class FeedbackServiceImpl implements FeedbackService {
         return feedbackRepository.findByUserId(userId).stream().map(this::mapToResponseDTO).collect(Collectors.toList());
     }
 
+    @Override
     public List<FeedbackResponseDTO> getByType(String type) {
         return feedbackRepository.findByType(type).stream().map(this::mapToResponseDTO).collect(Collectors.toList());
     }
 
+    @Override
     public List<FeedbackResponseDTO> getReviewsByBookId(Integer bookId) {
         return feedbackRepository.findByBookIdAndType(bookId, "REVIEW").stream().map(this::mapToResponseDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public FeedbackResponseDTO updateFeedback(String feedbackId, FeedbackRequestDTO requestDTO) {
+        Feedback feedback = feedbackRepository.findById(feedbackId)
+                .orElseThrow(() -> new FeedbackNotFoundException("Feedback not found: " + feedbackId));
+
+        if (requestDTO.getRating() < 1 || requestDTO.getRating() > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        if (!"FEEDBACK".equals(requestDTO.getType()) && !"REVIEW".equals(requestDTO.getType())) {
+            throw new IllegalArgumentException("Type must be either FEEDBACK or REVIEW");
+        }
+        if ("REVIEW".equals(requestDTO.getType()) && requestDTO.getBookId() == null) {
+            throw new IllegalArgumentException("bookId is required for a REVIEW");
+        }
+
+        feedback.setUserId(requestDTO.getUserId());
+        feedback.setBookId(requestDTO.getBookId());
+        feedback.setType(requestDTO.getType());
+        feedback.setSubject(requestDTO.getSubject());
+        feedback.setMessage(requestDTO.getMessage());
+        feedback.setRating(requestDTO.getRating());
+
+        Feedback updated = feedbackRepository.save(feedback);
+        return mapToResponseDTO(updated);
     }
 
     @Override

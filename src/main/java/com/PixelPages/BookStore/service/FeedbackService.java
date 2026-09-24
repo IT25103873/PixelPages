@@ -10,6 +10,9 @@ public interface FeedbackService {
     FeedbackResponseDTO createFeedback(FeedbackRequestDTO requestDTO);
     List<FeedbackResponseDTO> getAllFeedback();
     List<FeedbackResponseDTO> getFeedbackByUserId(Integer userId);
+    List<FeedbackResponseDTO> getByType(String type);
+    List<FeedbackResponseDTO> getReviewsByBookId(Integer bookId);
+    FeedbackResponseDTO updateFeedback(String feedbackId, FeedbackRequestDTO requestDTO);
     FeedbackResponseDTO updateFeedbackStatus(String feedbackId, FeedbackStatusUpdateDTO statusDTO);
     void deleteFeedback(String feedbackId);
 }
