@@ -21,13 +21,13 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
-    private Long orderId;
+    private Integer orderId;
 
     @Column(name = "customer_id", nullable = false)
-    private Long customerId;
+    private Integer customerId;
 
     @Column(name = "address_id", nullable = false)
-    private Long addressId;
+    private Integer addressId;
 
     @Column(name = "order_date", nullable = false)
     private LocalDateTime orderDate;
@@ -39,11 +39,11 @@ public class Order {
     private BigDecimal totalAmount;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference  // Forward part of reference (will serialize order items normally)
+    @JsonManagedReference
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
-    @JsonManagedReference  // Added here in case Delivery also links back to Order
+    @JsonManagedReference
     private Delivery delivery;
 
     @PrePersist

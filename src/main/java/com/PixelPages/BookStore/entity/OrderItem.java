@@ -18,15 +18,15 @@ public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_item_id")
-    private Long orderItemId;
+    private Integer orderItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
-    @JsonBackReference  // Prevents serializing the order again from the child
+    @JsonBackReference
     private Order order;
 
     @Column(name = "book_id", nullable = false)
-    private Long bookId;
+    private Integer bookId;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
